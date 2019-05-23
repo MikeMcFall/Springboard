@@ -99,7 +99,7 @@ facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
 SELECT  f.name AS facility_name,
         CONCAT(m.firstname, ' ', m.surname) AS member_name,
-        CASE WHEN b.memid = 0 THEN f.guestcost
+        CASE WHEN b.memid = 0 THEN f.guestcost        --Select the correct cost, guests have id=0
             ELSE f.membercost END AS cost
 FROM Bookings b
 LEFT JOIN Facilities f
@@ -107,7 +107,7 @@ ON b.facid = f.facid
 LEFT JOIN Members m
 ON b.memid = m.memid
 WHERE b.starttime >= '20120914' AND b.starttime < DATEADD(day, 1, '20120914')
-AND  CASE WHEN b.memid = 0 THEN f.guestcost
+AND  CASE WHEN b.memid = 0 THEN f.guestcost        --Cannot filter on a derived column so must restate CASE
             ELSE f.membercost END > 30
 ORDER BY cost DESC
 ;
@@ -116,24 +116,24 @@ ORDER BY cost DESC
 SELECT  sq.name AS facility_name,
         CONCAT(m.firstname, ' ', m.surname) AS member_name,
         sq.cost
-FROM (  SELECT  f.name,
+FROM (   SELECT  f.name,
                 b.memid,
-                CASE WHEN b.memid = 0 THEN f.guestcost
-                    ELSE f.membercost END AS cost
+                CASE WHEN b.memid = 0 THEN f.guestcost       --Creates a table of booking from the specified date
+                    ELSE f.membercost END AS cost            --with the cost column derived
         FROM Bookings b
         LEFT JOIN Facilities f
         ON b.facid = f.facid
         WHERE b.starttime >= '20120914' AND b.starttime < DATEADD(day, 1, '20120914')) sq
 LEFT JOIN Members m
 ON sq.memid = m.memid
-WHERE sq.cost > 30
+WHERE sq.cost > 30          --This works now because the cost column was derived in a subquery
 ORDER BY sq.cost DESC
 ;
 
 /* Q10: Produce a list of facilities with a total revenue less than 1000.
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
-SELECT *
+SELECT *       --Creates the full revenue table as a subquery and then filters in the outer query
 FROM(
     SELECT  f.name,
             SUM(CASE WHEN b.memid = 0 THEN f.guestcost
